@@ -9,82 +9,99 @@ var Class = require('../superjs/core/base'),
 
 module.exports = Class.extend({
 
+
   //initialize the database engine
   _init: function(app) {
-    this._setupOrm(app);
-    this._loadModels(app);
-    this._initOrm(app);
+
+    //store reference to the app
+    this.app = app;
+
+    //maintain list of loaded models for console
+    this.loadedModels = [];
+
+    this._setupOrm();
+    this._loadModels();
+    this._initOrm();
   },
 
   //initialize the waterline ORM
-  _setupOrm: function(app) {
+  _setupOrm: function() {
 
     var Waterline = require('waterline');
 
     //maintain reference to waterline orm
-    app.orm = new Waterline();
+    this.app.orm = new Waterline();
 
   },
 
   //load models by going through module folders
-  _loadModels: function(app) {
+  _loadModels: function() {
 
     console.log('loading models...');
+
+    //maintain reference to self
+    var self = this;
 
     //maintain quick list of loaded models for console
     var loadedModels = [];
 
     //check if files are stored in modules or by type
-    if( fs.existsSync(app.appPath+'/modules') ) {
+    if( fs.existsSync(self.app.appPath+'/modules') ) {
 
       //get list of modules
-      var modules = fs.readdirSync(app.appPath+'/modules');
+      var modules = fs.readdirSync(self.app.appPath+'/modules');
 
       //load each controller
       modules.map(function(moduleName) {
 
         //make sure the controller exists
-        if( fs.existsSync(app.appPath+'/modules/'+moduleName+'/model.js') ) {
+        if( fs.existsSync(self.app.appPath+'/modules/'+moduleName+'/model.js') ) {
 
-          var Model = require(app.appPath+'/modules/'+moduleName+'/model');
+          var Model = require(self.app.appPath+'/modules/'+moduleName+'/model');
 
           if( Model ) {
-            app.orm.loadCollection(Model);
-            loadedModels.push(moduleName);
+            self._loadModel(moduleName, Model);
           }
         }
 
       });
 
-    } else if( fs.existsSync(app.appPath+'/models') ) {
+    } else if( fs.existsSync(self.app.appPath+'/models') ) {
 
       //get list of models
-      var models = fs.readdirSync(app.appPath+'/models');
+      var models = fs.readdirSync(self.app.appPath+'/models');
 
       //load each controller
       models.map(function(modelName) {
 
         modelName = modelName.split('.')[0];
 
-        var Model = require(app.appPath+'/models/'+modelName);
+        var Model = require(self.app.appPath+'/models/'+modelName);
 
         if( Model ) {
-          app.orm.loadCollection(Model);
-          loadedModels.push(modelName);
+          self._loadModel(modelName, Model);
         }
 
       });
 
     }
 
-    console.log('models loaded:',loadedModels);
+    console.log('models loaded:',this.loadedModels);
 
   },
 
-  _initOrm: function(app) {
+  _loadModel: function(modelName, Model) {
+    this.app.orm.loadCollection(Model);
+    this.loadedModels.push(modelName);
+  },
+
+  _initOrm: function() {
+
+    //maintain reference to self
+    var self = this;
 
     //initialize the orm
-    app.orm.initialize(app.config.data, function(err, models) {
+    this.app.orm.initialize(this.app.config.data, function(err, models) {
 
       //TODO: retry/manage app.ormReady state
       if(err) {
@@ -93,10 +110,10 @@ module.exports = Class.extend({
 
       } else {
         console.log('The ORM is Now Ready...');
-        app.models = models.collections;
-        app.connections = models.connections;
+        self.app.models = models.collections;
+        self.app.connections = models.connections;
 
-        app._emit('ormReady', models.collections);
+        self.app._emit('dbReady', models.collections);
       }
     });
 
