@@ -33,7 +33,7 @@ module.exports = Controller.extend({
 
   },
 
-  Search: function(req, callback) {
+  Search: function(req, next) {
 
     //maintain reference to self
     var self = this;
@@ -51,13 +51,13 @@ module.exports = Controller.extend({
       .skip(skip)
       .sort(sort)
       .then(function(results) {
-        callback({success: true, message: "Successfully searched the " + self.name + " database...", results: results});
+        next({success: true, message: "Successfully searched the " + self.name + " database...", results: results});
       }).fail( function(err) {
-        callback({success: false, message: "Failed to search the " + self.name + " database...", error: err});
+        next({success: false, message: "Failed to search the " + self.name + " database...", error: err});
       });
   },
 
-  Create: function(req, callback) {
+  Create: function(req, next) {
 
     //maintain reference to self
     var self = this;
@@ -68,13 +68,13 @@ module.exports = Controller.extend({
     //add record to the database
     this.model.create(obj)
       .then(function(results) {
-        callback({success: true, message: "Successfully created " + self.name + " record...", results: results});
+        next({success: true, message: "Successfully created " + self.name + " record...", results: results});
       }).fail( function(err) {
-        callback({success: false, message: "Failed to create " + self.name + " record...", error: err});
+        next({success: false, message: "Failed to create " + self.name + " record...", error: err});
       });
   },
 
-  Update: function(req, callback) {
+  Update: function(req, next) {
 
     //maintain reference to self
     var self = this;
@@ -84,21 +84,21 @@ module.exports = Controller.extend({
 
     //make sure the id is present
     if( !obj.id ) {
-      callback({success: false, message: "Updates require you pass the \"id\" field..."});
+      next({success: false, message: "Updates require you pass the \"id\" field..."});
       return;
     }
 
     //update database rec ord
     this.model.update({id: obj.id}, obj)
       .then(function(results) {
-        callback({success: true, message: "Successfully updated " + self.name + " record...", results: results});
+        next({success: true, message: "Successfully updated " + self.name + " record...", results: results});
       }).fail( function(err) {
-        callback({success: false, message: "Failed to update " + self.name + " record...", error: err});
+        next({success: false, message: "Failed to update " + self.name + " record...", error: err});
       });
 
   },
 
-  Delete: function(req, callback) {
+  Delete: function(req, next) {
 
     //maintain reference to self
     var self = this;
@@ -108,24 +108,24 @@ module.exports = Controller.extend({
 
     //make sure the id is present
     if( !params.id ) {
-      callback({success: false, message: "Delete requires you pass the \"id\" field..."});
+      next({success: false, message: "Delete requires you pass the \"id\" field..."});
       return;
     }
 
     //mark record as deleted
     this.model.update({id: params.id}, {isDeleted: true})
       .then(function(results) {
-        callback({success: true, message: "Successfully deleted " + self.name + " record...", results: results});
+        next({success: true, message: "Successfully deleted " + self.name + " record...", results: results});
       }).fail( function(err) {
-        callback({success: false, message: "Failed to delete " + self.name + " record...", error: err});
+        next({success: false, message: "Failed to delete " + self.name + " record...", error: err});
       });
 
   },
 
-  Describe: function(req, callback) {
+  Describe: function(req, next) {
 
     var response = {success: true, model: this.model.name, attributes: this.model._attributes};
-    callback(response);
+    next(response);
 
   }
 
