@@ -3,9 +3,9 @@
  */
 
 //require dependencies
-var Class = require('../superjs/core/base'),
-    fs = require('fs');
-
+var Class = require('../superjs/core/base');
+var fs = require('fs');
+var Waterline = require('waterline');
 
 module.exports = Class.extend({
 
@@ -57,10 +57,10 @@ module.exports = Class.extend({
         //make sure the controller exists
         if( fs.existsSync(self.app.appPath+'/modules/'+moduleName+'/model.js') ) {
 
-          var Model = require(self.app.appPath+'/modules/'+moduleName+'/model');
+          var modelDefinition = require(self.app.appPath+'/modules/'+moduleName+'/model');
 
-          if( Model ) {
-            self.loadModel(moduleName, Model);
+          if( modelDefinition ) {
+            self.loadModel(moduleName, modelDefinition);
           }
         }
 
@@ -76,10 +76,10 @@ module.exports = Class.extend({
 
         modelName = modelName.split('.')[0];
 
-        var Model = require(self.app.appPath+'/models/'+modelName);
+        var modelDefinition = require(self.app.appPath+'/models/'+modelName);
 
-        if( Model ) {
-          self.loadModel(modelName, Model);
+        if( modelDefinition ) {
+          self.loadModel(modelName, modelDefinition);
         }
 
       });
@@ -90,8 +90,27 @@ module.exports = Class.extend({
 
   },
 
-  loadModel: function(modelName, Model) {
-    this.app.orm.loadCollection(Model);
+  loadModel: function(modelName, modelDefinition) {
+
+    //set name/identity if not present
+    if (modelDefinition.name) {
+      modelDefinition.identity = modelDefinition.name;
+    } else {
+      if( modelDefinition.identity ) {
+        modelDefinition.name = modelDefinition.identity;
+      } else {
+        modelDefinition.name = modelName;
+        modelDefinition.identity = modelName;
+      }
+    }
+
+    //extend the waterline collection
+    var ormModel = Waterline.Collection.extend(modelDefinition);
+
+    //load the collection with waterline
+    this.app.orm.loadCollection(ormModel);
+
+    //make the model available to the application
     this.loadedModels.push(modelName);
   },
 
