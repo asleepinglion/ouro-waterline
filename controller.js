@@ -33,7 +33,7 @@ module.exports = Controller.extend({
 
   },
 
-  _search: function(req, callback) {
+  Search: function(req, callback) {
 
     //maintain reference to self
     var self = this;
@@ -57,7 +57,7 @@ module.exports = Controller.extend({
       });
   },
 
-  _create: function(req, callback) {
+  Create: function(req, callback) {
 
     //maintain reference to self
     var self = this;
@@ -74,7 +74,7 @@ module.exports = Controller.extend({
       });
   },
 
-  _update: function(req, callback) {
+  Update: function(req, callback) {
 
     //maintain reference to self
     var self = this;
@@ -98,7 +98,7 @@ module.exports = Controller.extend({
 
   },
 
-  _delete: function(req, callback) {
+  Delete: function(req, callback) {
 
     //maintain reference to self
     var self = this;
@@ -122,7 +122,7 @@ module.exports = Controller.extend({
 
   },
 
-  _describe: function(req, callback) {
+  Describe: function(req, callback) {
 
     var response = {success: true, model: this.model.name, attributes: this.model._attributes};
     callback(response);
