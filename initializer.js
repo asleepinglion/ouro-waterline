@@ -11,7 +11,7 @@ module.exports = Class.extend({
 
 
   //initialize the database engine
-  _init: function(app) {
+  init: function(app) {
 
     //store reference to the app
     this.app = app;
@@ -19,13 +19,13 @@ module.exports = Class.extend({
     //maintain list of loaded models for console
     this.loadedModels = [];
 
-    this._setupOrm();
-    this._loadModels();
-    this._initOrm();
+    this.setupOrm();
+    this.loadModels();
+    this.initOrm();
   },
 
   //initialize the waterline ORM
-  _setupOrm: function() {
+  setupOrm: function() {
 
     var Waterline = require('waterline');
 
@@ -35,9 +35,9 @@ module.exports = Class.extend({
   },
 
   //load models by going through module folders
-  _loadModels: function() {
+  loadModels: function() {
 
-    console.log('loading models...');
+    this.app.log.info('loading models...');
 
     //maintain reference to self
     var self = this;
@@ -60,7 +60,7 @@ module.exports = Class.extend({
           var Model = require(self.app.appPath+'/modules/'+moduleName+'/model');
 
           if( Model ) {
-            self._loadModel(moduleName, Model);
+            self.loadModel(moduleName, Model);
           }
         }
 
@@ -79,23 +79,23 @@ module.exports = Class.extend({
         var Model = require(self.app.appPath+'/models/'+modelName);
 
         if( Model ) {
-          self._loadModel(modelName, Model);
+          self.loadModel(modelName, Model);
         }
 
       });
 
     }
 
-    console.log('models loaded:',this.loadedModels);
+    this.app.log.info('models loaded:',this.loadedModels);
 
   },
 
-  _loadModel: function(modelName, Model) {
+  loadModel: function(modelName, Model) {
     this.app.orm.loadCollection(Model);
     this.loadedModels.push(modelName);
   },
 
-  _initOrm: function() {
+  initOrm: function() {
 
     //maintain reference to self
     var self = this;
@@ -105,15 +105,14 @@ module.exports = Class.extend({
 
       //TODO: retry/manage app.ormReady state
       if(err) {
-        console.log('ORM failed to initialize:');
-        console.log(err);
+        self.app.log.error('ORM failed to initialize:',err);
 
       } else {
-        console.log('The ORM is Now Ready...');
+        self.app.log.info('The ORM is Now Ready...');
         self.app.models = models.collections;
         self.app.connections = models.connections;
 
-        self.app._emit('dbReady', models.collections);
+        self.app.emit('dbReady', models.collections);
       }
     });
 

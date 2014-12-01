@@ -8,7 +8,7 @@ var Controller = require('../superjs/core/controller');
 
 module.exports = Controller.extend({
 
-  _init: function(app) {
+  init: function(app) {
 
     //call base class constructor
     this._super(app);
@@ -19,7 +19,7 @@ module.exports = Controller.extend({
     //store reference to self
     var self = this;
 
-    this.app._on('dbReady', function(models) {
+    this.app.on('dbReady', function(models) {
 
       //store reference to models
       self.models = models;
@@ -27,13 +27,13 @@ module.exports = Controller.extend({
       //associate model of the same name to this controller if it exists
       var modelName = self.name.toLowerCase();
       if( modelName in models )
-        self._model = models[modelName];
+        self.model = models[modelName];
 
     });
 
   },
 
-  search: function(req, callback) {
+  _search: function(req, callback) {
 
     //maintain reference to self
     var self = this;
@@ -45,7 +45,7 @@ module.exports = Controller.extend({
     var skip = req.param('skip') || 0;
 
     //search database
-    this._model.find()
+    this.model.find()
       .where(where)
       .limit(limit)
       .skip(skip)
@@ -57,7 +57,7 @@ module.exports = Controller.extend({
       });
   },
 
-  create: function(req, callback) {
+  _create: function(req, callback) {
 
     //maintain reference to self
     var self = this;
@@ -66,7 +66,7 @@ module.exports = Controller.extend({
     var obj = req.body || {};
 
     //add record to the database
-    this._model.create(obj)
+    this.model.create(obj)
       .then(function(results) {
         callback({success: true, message: "Successfully created " + self.name + " record...", results: results});
       }).fail( function(err) {
@@ -74,7 +74,7 @@ module.exports = Controller.extend({
       });
   },
 
-  update: function(req, callback) {
+  _update: function(req, callback) {
 
     //maintain reference to self
     var self = this;
@@ -89,7 +89,7 @@ module.exports = Controller.extend({
     }
 
     //update database rec ord
-    this._model.update({id: obj.id}, obj)
+    this.model.update({id: obj.id}, obj)
       .then(function(results) {
         callback({success: true, message: "Successfully updated " + self.name + " record...", results: results});
       }).fail( function(err) {
@@ -98,7 +98,7 @@ module.exports = Controller.extend({
 
   },
 
-  delete: function(req, callback) {
+  _delete: function(req, callback) {
 
     //maintain reference to self
     var self = this;
@@ -113,7 +113,7 @@ module.exports = Controller.extend({
     }
 
     //mark record as deleted
-    this._model.update({id: params.id}, {isDeleted: true})
+    this.model.update({id: params.id}, {isDeleted: true})
       .then(function(results) {
         callback({success: true, message: "Successfully deleted " + self.name + " record...", results: results});
       }).fail( function(err) {
@@ -122,7 +122,7 @@ module.exports = Controller.extend({
 
   },
 
-  describe: function(req, callback) {
+  _describe: function(req, callback) {
 
     var response = {success: true, model: this.model.name, attributes: this.model._attributes};
     callback(response);
