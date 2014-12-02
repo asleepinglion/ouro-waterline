@@ -3,7 +3,7 @@
  */
 
 //require dependencies
-var Class = require('../superjs/core/base');
+var Class = require('superjs-base');
 var fs = require('fs');
 var Waterline = require('waterline');
 
