@@ -1,11 +1,18 @@
 /*
- * Waterline REST Controller *
- * the rest controller class provides basic rest methods to a controller *
+ * @module API
+ * @submodule Database
  */
 
-//require dependencies
+"use strict";
+
 var Controller = require('../superjs/core/controller');
 
+/**
+ * The WaterlineController provides basic essential methods for the basic model management.
+ *
+ * @exports WaterlineController
+ * @extends SuperJS.Controller
+ */
 module.exports = Controller.extend({
 
   init: function(app) {
@@ -33,6 +40,12 @@ module.exports = Controller.extend({
 
   },
 
+  /**
+   * Search records in the database.
+   *
+   * @param req
+   * @param next
+   */
   Search: function(req, next) {
 
     //maintain reference to self
@@ -51,12 +64,24 @@ module.exports = Controller.extend({
       .skip(skip)
       .sort(sort)
       .then(function(results) {
-        next({success: true, message: "Successfully searched the " + self.name + " database...", results: results});
-      }).fail( function(err) {
-        next({success: false, message: "Failed to search the " + self.name + " database...", error: err});
+
+        //package * return response
+        var response = {meta:{success: true, message: "Successfully searched the " + self.name + " database..."}};
+        response[self.name] = results;
+        next(response);
+
+      }).fail( function(wlErrors) {
+        var errors = self.parseErrors(wlErrors);
+        next({meta:{success: false, message: "Failed to search the " + self.name + " database..."}, errors: errors}, 422);
       });
   },
 
+  /**
+   * Create a new record in the database.
+   *
+   * @param req
+   * @param next
+   */
   Create: function(req, next) {
 
     //maintain reference to self
@@ -68,12 +93,24 @@ module.exports = Controller.extend({
     //add record to the database
     this.model.create(obj)
       .then(function(results) {
-        next({success: true, message: "Successfully created " + self.name + " record...", results: results});
-      }).fail( function(err) {
-        next({success: false, message: "Failed to create " + self.name + " record...", error: err});
+
+        //package * return response
+        var response = {meta:{success: true, message: "Successfully created " + self.name + " record..."}};
+        response[self.name] = results;
+        next(response);
+
+      }).fail( function(wlErrors) {
+        var errors = self.parseErrors(wlErrors);
+        next({meta:{success: false, message: "Failed to create " + self.name + " record..."}, errors: errors}, 422);
       });
   },
 
+  /**
+   * Update a record in the database.
+   *
+   * @param req
+   * @param next
+   */
   Update: function(req, next) {
 
     //maintain reference to self
@@ -91,13 +128,25 @@ module.exports = Controller.extend({
     //update database rec ord
     this.model.update({id: obj.id}, obj)
       .then(function(results) {
-        next({success: true, message: "Successfully updated " + self.name + " record...", results: results});
-      }).fail( function(err) {
-        next({success: false, message: "Failed to update " + self.name + " record...", error: err});
+
+        //package * return response
+        var response = {meta:{success: true, message: "Successfully updated " + self.name + " record..."}};
+        response[self.name] = results;
+        next(response);
+
+      }).fail( function(wlErrors) {
+        var errors = self.parseErrors(wlErrors);
+        next({meta:{success: false, message: "Failed to update " + self.name + " record..."}, errors: errors}, 422);
       });
 
   },
 
+  /**
+   * Delete a record from the database.
+   *
+   * @param req
+   * @param next
+   */
   Delete: function(req, next) {
 
     //maintain reference to self
@@ -115,18 +164,64 @@ module.exports = Controller.extend({
     //mark record as deleted
     this.model.update({id: params.id}, {isDeleted: true})
       .then(function(results) {
-        next({success: true, message: "Successfully deleted " + self.name + " record...", results: results});
-      }).fail( function(err) {
-        next({success: false, message: "Failed to delete " + self.name + " record...", error: err});
+
+        //package * return response
+        var response = {meta:{success: true, message: "Successfully deleted " + self.name + " record..."}};
+        response[self.name] = results;
+        next(response);
+
+      }).fail( function(wlErrors) {
+        var errors = self.parseErrors(wlErrors);
+        next({meta:{success: false, message: "Failed to delete " + self.name + " record..."}, errors: errors}, 422);
       });
 
   },
 
   Describe: function(req, next) {
 
-    var response = {success: true, model: this.model.name, attributes: this.model._attributes};
+    var response = {meta:{success: true, model: this.model.name, attributes: this.model._attributes}};
     next(response);
 
+  },
+
+  /**
+   * Loop through invalid attribute errors on the errors object returned
+   * from waterline and populate error message array for proper JSON API response.
+   *
+   * @param wlErrors
+   * @returns {{}}
+   */
+
+  parseErrors: function(wlErrors) {
+
+    var errors = {};
+
+    var attributes = wlErrors.invalidAttributes;
+
+    for( var key in attributes ) {
+      errors[key] = [];
+
+      for( var issue in attributes[key] ) {
+
+        //TODO: provide clean error mesasage for all rules
+        switch(attributes[key][issue].rule) {
+          case 'string':
+            errors[key].push("The `"+key+"` field must be a string.");
+            break;
+          case 'required':
+            errors[key].push("The `"+key+"` field is required.");
+            break;
+          case 'email':
+            errors[key].push("The `"+key+"` field must be a valid email address.");
+            break;
+          default:
+            errors[key].push(attributes[key][issue].message);
+        }
+
+      }
+    }
+
+    return errors;
   }
 
 });
