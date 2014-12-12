@@ -10,6 +10,8 @@
   "repository": "https://github.com/asleepinglion/superjs-waterline",
   "dependencies": {
     "superjs-base": "^0.2.0",
+    "underscore": "^1.7.0",
+    "validator": "^3.23.0",
     "waterline": "git+https://github.com/balderdashy/waterline.git"
   },
   "license": "MIT"

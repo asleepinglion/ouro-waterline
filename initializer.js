@@ -37,8 +37,6 @@ module.exports = Class.extend({
   //load models by going through module folders
   loadModels: function() {
 
-    this.app.log.info('loading models...');
-
     //maintain reference to self
     var self = this;
 
@@ -127,7 +125,6 @@ module.exports = Class.extend({
         self.app.log.error('ORM failed to initialize:',err);
 
       } else {
-        self.app.log.info('The ORM is Now Ready...');
         self.app.models = models.collections;
         self.app.connections = models.connections;
 

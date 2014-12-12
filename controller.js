@@ -6,6 +6,8 @@
 "use strict";
 
 var Controller = require('../superjs/core/controller');
+var validator = require('validator');
+var _ = require('underscore');
 
 /**
  * The WaterlineController provides basic essential methods for the basic model management.
@@ -13,8 +15,14 @@ var Controller = require('../superjs/core/controller');
  * @exports WaterlineController
  * @extends SuperJS.Controller
  */
+
 module.exports = Controller.extend({
 
+  /**
+   * Initialize the controller
+   *
+   * @param app
+   */
   init: function(app) {
 
     //call base class constructor
@@ -46,15 +54,76 @@ module.exports = Controller.extend({
    * @param req
    * @param next
    */
+
   Search: function(req, next) {
 
     //maintain reference to self
     var self = this;
 
-    //validate parameters
+    //determine search criteria
     var where = req.param('where');
+    if( where ) {
+
+      //attempt to convert where clause to object if its a string
+      if(_.isString(where)){
+        try {
+          where = JSON.parse(where);
+        } catch(e) {
+          return next({meta:{success: false, message: "Failed to search the " + self.name + " database..."}, errors:[{code: 'invalid_where', status: 422, message: 'The where parameter provided was not valid JSON.'}]}, 422);
+        }
+      }
+
+    } else {
+
+      where = {};
+
+      var paramBlackList = ['sort','limit','skip','where'];
+
+      //loop through query string parameters
+      for( var param in req.query ) {
+
+        //ignore special parameters
+        if( paramBlackList.indexOf(param) !== -1 ) {
+          continue;
+        }
+
+        //populate where object
+        where[param] = req.query[param];
+
+      }
+
+      //loop through body parameters
+      for( var param in req.body ) {
+
+        //ignore special parameters
+        if( paramBlackList.indexOf(param) !== -1 ) {
+          continue;
+        }
+
+        //populate where object
+        where[param] = req.body[param];
+
+      }
+    }
+
+    //make sure fields are valid
+    for( var attribute in where ) {
+      var attribute = attribute.split(" ");
+      if( Object.keys(this.model._attributes).indexOf(attribute[0]) === -1 ) {
+        return next({meta:{success: false, message: "Failed to search the " + self.name + " database..."}, errors:[{code: 'invalid_attribute', status: 422, message: attribute[0]+' is not a valid attribute.'}]}, 422);
+      }
+    }
+
+    //make sure the sort parameter is an available attribute
     var sort = req.param('sort');
-    var limit = req.param('limit');
+    if( sort ) {
+      var sortBy = sort.split(" ");
+      if( Object.keys(this.model._attributes).indexOf(sortBy[0]) === -1 ) {
+        return next({meta:{success: false, message: "Failed to search the " + self.name + " database..."}, errors:[{code: 'invalid_sort', status: 422, message: sortBy[0]+' is not a valid attribute.'}]}, 422);
+      }
+    }
+
+    var limit = req.param('limit') || 25;
     var skip = req.param('skip') || 0;
 
     //search database
@@ -65,14 +134,17 @@ module.exports = Controller.extend({
       .sort(sort)
       .then(function(results) {
 
-        //package * return response
+        //package & return response
         var response = {meta:{success: true, message: "Successfully searched the " + self.name + " database..."}};
         response[self.name] = results;
         next(response);
 
       }).fail( function(wlErrors) {
-        var errors = self.parseErrors(wlErrors);
-        next({meta:{success: false, message: "Failed to search the " + self.name + " database..."}, errors: errors}, 422);
+
+        //return properly formatted error messages
+        var parsed = self.parseErrors(wlErrors);
+        next({meta:{success: false, message: "Failed to search the " + self.name + " database..."}, errors: parsed.errors}, parsed.status);
+
       });
   },
 
@@ -82,6 +154,7 @@ module.exports = Controller.extend({
    * @param req
    * @param next
    */
+
   Create: function(req, next) {
 
     //maintain reference to self
@@ -94,14 +167,16 @@ module.exports = Controller.extend({
     this.model.create(obj)
       .then(function(results) {
 
-        //package * return response
+        //package & return response
         var response = {meta:{success: true, message: "Successfully created " + self.name + " record..."}};
         response[self.name] = results;
         next(response);
 
       }).fail( function(wlErrors) {
-        var errors = self.parseErrors(wlErrors);
-        next({meta:{success: false, message: "Failed to create " + self.name + " record..."}, errors: errors}, 422);
+
+        var parsed = self.parseErrors(wlErrors);
+        next({meta:{success: false, message: "Failed to create " + self.name + " record..."}, errors: parsed.errors}, parsed.status);
+
       });
   },
 
@@ -111,6 +186,7 @@ module.exports = Controller.extend({
    * @param req
    * @param next
    */
+
   Update: function(req, next) {
 
     //maintain reference to self
@@ -129,14 +205,14 @@ module.exports = Controller.extend({
     this.model.update({id: obj.id}, obj)
       .then(function(results) {
 
-        //package * return response
+        //package & return response
         var response = {meta:{success: true, message: "Successfully updated " + self.name + " record..."}};
         response[self.name] = results;
         next(response);
 
       }).fail( function(wlErrors) {
-        var errors = self.parseErrors(wlErrors);
-        next({meta:{success: false, message: "Failed to update " + self.name + " record..."}, errors: errors}, 422);
+        var parsed = self.parseErrors(wlErrors);
+        next({meta:{success: false, message: "Failed to update " + self.name + " record..."}, errors: parsed.errors}, parsed.status);
       });
 
   },
@@ -147,6 +223,7 @@ module.exports = Controller.extend({
    * @param req
    * @param next
    */
+
   Delete: function(req, next) {
 
     //maintain reference to self
@@ -165,63 +242,79 @@ module.exports = Controller.extend({
     this.model.update({id: params.id}, {isDeleted: true})
       .then(function(results) {
 
-        //package * return response
+        //package & return response
         var response = {meta:{success: true, message: "Successfully deleted " + self.name + " record..."}};
         response[self.name] = results;
         next(response);
 
       }).fail( function(wlErrors) {
-        var errors = self.parseErrors(wlErrors);
-        next({meta:{success: false, message: "Failed to delete " + self.name + " record..."}, errors: errors}, 422);
+        var parsed = self.parseErrors(wlErrors);
+        next({meta:{success: false, message: "Failed to delete " + self.name + " record..."}, errors: parsed.errors}, parsed.status);
       });
 
   },
 
   Describe: function(req, next) {
 
-    var response = {meta:{success: true, model: this.model.name, attributes: this.model._attributes}};
+    var response = {meta:{success: true, model: this.model.name}, attributes: this.model._attributes};
     next(response);
 
   },
 
   /**
-   * Loop through invalid attribute errors on the errors object returned
-   * from waterline and populate error message array for proper JSON API response.
+   * Loop through errors returned from waterline and populate an
+   * error array for clean consistent responses.
    *
    * @param wlErrors
-   * @returns {{}}
+   * @returns {Object}
    */
 
   parseErrors: function(wlErrors) {
 
-    var errors = {};
+    this.app.log.error('waterline errors:',wlErrors);
 
-    var attributes = wlErrors.invalidAttributes;
+    var errors = [];
+    var status = 500;
 
-    for( var key in attributes ) {
-      errors[key] = [];
+    if( wlErrors.status >= 500 ) {
+      errors.push({code: 'database_error', status: status, message: 'An unexpected error occurred attempting to execute your query.', raw: wlErrors.raw});
 
-      for( var issue in attributes[key] ) {
+    } else if( wlErrors.status >= 400 ) {
 
-        //TODO: provide clean error mesasage for all rules
-        switch(attributes[key][issue].rule) {
-          case 'string':
-            errors[key].push("The `"+key+"` field must be a string.");
-            break;
-          case 'required':
-            errors[key].push("The `"+key+"` field is required.");
-            break;
-          case 'email':
-            errors[key].push("The `"+key+"` field must be a valid email address.");
-            break;
-          default:
-            errors[key].push(attributes[key][issue].message);
+      status = 422;
+      var attributes = wlErrors.invalidAttributes;
+
+      var error = {code: 'validation_error', status: status, exceptions:[]};
+
+      for (var key in attributes) {
+
+        for (var i in attributes[key]) {
+
+          var exception = {rule: attributes[key][i].rule, attribute: key};
+
+          //TODO: provide clean error message for all rules
+          switch (attributes[key][i].rule) {
+            case 'string':
+              exception.message = "The `" + key + "` field must be a string.";
+              break;
+            case 'required':
+              exception.message = "The `" + key + "` field is required.";
+              break;
+            case 'email':
+              exception.message = "The `" + key + "` field must be a valid email address.";
+              break;
+            default:
+              exception.message = attributes[key][i].message;
+          }
+
+          error.exceptions.push(exception);
         }
-
       }
+
+      errors.push(error);
     }
 
-    return errors;
+    return {status: status, errors: errors};
   }
 
 });
