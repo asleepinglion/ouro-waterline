@@ -6,7 +6,6 @@
 "use strict";
 
 var Controller = require('../superjs/core/controller');
-var validator = require('validator');
 var _ = require('underscore');
 
 /**
