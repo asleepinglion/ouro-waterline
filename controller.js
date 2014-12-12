@@ -61,58 +61,10 @@ module.exports = Controller.extend({
     var self = this;
 
     //determine search criteria
-    var where = req.param('where');
-    if( where ) {
+    var where = this.sanitizeCriteria(req, next);
 
-      //attempt to convert where clause to object if its a string
-      if(_.isString(where)){
-        try {
-          where = JSON.parse(where);
-        } catch(e) {
-          return next({meta:{success: false, message: "Failed to search the " + self.name + " database..."}, errors:[{code: 'invalid_where', status: 422, message: 'The where parameter provided was not valid JSON.'}]}, 422);
-        }
-      }
-
-    } else {
-
-      where = {};
-
-      var paramBlackList = ['sort','limit','skip','where'];
-
-      //loop through query string parameters
-      for( var param in req.query ) {
-
-        //ignore special parameters
-        if( paramBlackList.indexOf(param) !== -1 ) {
-          continue;
-        }
-
-        //populate where object
-        where[param] = req.query[param];
-
-      }
-
-      //loop through body parameters
-      for( var param in req.body ) {
-
-        //ignore special parameters
-        if( paramBlackList.indexOf(param) !== -1 ) {
-          continue;
-        }
-
-        //populate where object
-        where[param] = req.body[param];
-
-      }
-    }
-
-    //make sure fields are valid
-    for( var attribute in where ) {
-      var attribute = attribute.split(" ");
-      if( Object.keys(this.model._attributes).indexOf(attribute[0]) === -1 ) {
-        return next({meta:{success: false, message: "Failed to search the " + self.name + " database..."}, errors:[{code: 'invalid_attribute', status: 422, message: attribute[0]+' is not a valid attribute.'}]}, 422);
-      }
-    }
+    if( where === false )
+      return;
 
     //make sure the sort parameter is an available attribute
     var sort = req.param('sort');
@@ -261,6 +213,70 @@ module.exports = Controller.extend({
 
   },
 
+  //TODO: refactor as promises
+  sanitizeCriteria: function(req, next) {
+
+    //maintain reference to instance
+    var self = this;
+
+    var where = req.param('where');
+    if( where ) {
+
+      //attempt to convert where clause to object if its a string
+      if(_.isString(where)){
+        try {
+          where = JSON.parse(where);
+        } catch(e) {
+          next({meta:{success: false, message: "Failed to search the " + self.name + " database..."}, errors:[{code: 'invalid_where', status: 422, message: 'The where parameter provided was not valid JSON.'}]}, 422);
+          return false;
+        }
+      }
+
+    } else {
+
+      where = {};
+
+      var paramBlackList = ['sort','limit','skip','where'];
+
+      //loop through query string parameters
+      for( var qParam in req.query ) {
+
+        //ignore special parameters
+        if( paramBlackList.indexOf(qParam) !== -1 ) {
+          continue;
+        }
+
+        //populate where object
+        where[qParam] = req.query[qParam];
+
+      }
+
+      //loop through body parameters
+      for( var bParam in req.body ) {
+
+        //ignore special parameters
+        if( paramBlackList.indexOf(bParam) !== -1 ) {
+          continue;
+        }
+
+        //populate where object
+        where[bParam] = req.body[bParam];
+
+      }
+    }
+
+    //make sure fields are valid
+    for( var attribute in where ) {
+      var attribute = attribute.split(" ");
+      if( Object.keys(this.model._attributes).indexOf(attribute[0]) === -1 ) {
+        next({meta:{success: false, message: "Failed to search the " + self.name + " database..."}, errors:[{code: 'invalid_attribute', status: 422, message: attribute[0]+' is not a valid attribute.'}]}, 422);
+        return false;
+      }
+    }
+
+    return where;
+  },
+
   /**
    * Loop through errors returned from waterline and populate an
    * error array for clean consistent responses.
@@ -269,6 +285,7 @@ module.exports = Controller.extend({
    * @returns {Object}
    */
 
+  //TODO: refactor as promises
   parseErrors: function(wlErrors) {
 
     this.app.log.error('waterline errors:',wlErrors);
