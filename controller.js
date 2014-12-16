@@ -60,8 +60,6 @@ module.exports = SuperJS.Controller.extend({
     //maintain reference to instance
     var self = this;
 
-    console.log('beginning search...');
-
     //return promise to resolve or reject
     return new Promise(function(resolve, reject) {
 
@@ -83,8 +81,6 @@ module.exports = SuperJS.Controller.extend({
         //execute the database query
         function(where, sort, limit, skip) {
 
-          console.log('beginning query...', where, sort, limit, skip);
-
           self.model.find()
             .where(where)
             .limit(limit)
@@ -96,7 +92,6 @@ module.exports = SuperJS.Controller.extend({
               var response = {meta:{success: true, message: "Successfully searched the " + self.name + " database..."}};
               response[self.name] = results;
 
-              console.log('resolving search...');
               resolve(response);
 
             });
