@@ -4,11 +4,12 @@
     "name": "Aaron Storck",
     "email": "aaronstorck@gmail.com"
   },
-  "version": "0.1.7",
+  "version": "0.2.0",
   "description": "Brings the power of Sail.JS' Waterline ORM to Super.JS!",
   "main": "index.js",
   "repository": "https://github.com/asleepinglion/superjs-waterline",
   "dependencies": {
+    "bluebird": "^2.3.11",
     "superjs-base": "*",
     "underscore": "^1.7.0",
     "waterline": "git+https://github.com/balderdashy/waterline.git"

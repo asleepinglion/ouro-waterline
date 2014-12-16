@@ -5,8 +5,9 @@
 
 "use strict";
 
-var Controller = require('../superjs/core/controller');
+var SuperJS = require('../superjs/index');
 var _ = require('underscore');
+var Promise = require('bluebird');
 
 /**
  * The WaterlineController provides basic essential methods for the basic model management.
@@ -15,7 +16,7 @@ var _ = require('underscore');
  * @extends SuperJS.Controller
  */
 
-module.exports = Controller.extend({
+module.exports = SuperJS.Controller.extend({
 
   /**
    * Initialize the controller
@@ -54,49 +55,66 @@ module.exports = Controller.extend({
    * @param next
    */
 
-  Search: function(req, next) {
+  Search: function(req) {
 
-    //maintain reference to self
+    //maintain reference to instance
     var self = this;
 
-    //determine search criteria
-    var where = this.sanitizeCriteria(req, next);
+    console.log('beginning search...');
 
-    if( where === false )
-      return;
+    //return promise to resolve or reject
+    return new Promise(function(resolve, reject) {
 
-    //make sure the sort parameter is an available attribute
-    var sort = req.param('sort');
-    if( sort ) {
-      var sortBy = sort.split(" ");
-      if( Object.keys(this.model._attributes).indexOf(sortBy[0]) === -1 ) {
-        return next({meta:{success: false, message: "Failed to search the " + self.name + " database..."}, errors:[{code: 'invalid_sort', status: 422, message: sortBy[0]+' is not a valid attribute.'}]}, 422);
-      }
-    }
+      //execute sanitization & validation in parallel
+      return Promise.join(
 
-    var limit = req.param('limit') || 25;
-    var skip = req.param('skip') || 0;
+        //sanitize and validate the search criteria
+        self.sanitizeCriteria(req),
 
-    //search database
-    this.model.find()
-      .where(where)
-      .limit(limit)
-      .skip(skip)
-      .sort(sort)
-      .then(function(results) {
+        //sanitize and validate the sort parameter
+        self.sanitizeSort(req),
 
-        //package & return response
-        var response = {meta:{success: true, message: "Successfully searched the " + self.name + " database..."}};
-        response[self.name] = results;
-        next(response);
+        //sanitize and validate the limit parameter
+        self.sanitizeLimit(req),
 
-      }).fail( function(wlErrors) {
+        //sanitize and validate the skip parameter
+        self.sanitizeSkip(req),
 
-        //return properly formatted error messages
-        var parsed = self.parseErrors(wlErrors);
-        next({meta:{success: false, message: "Failed to search the " + self.name + " database..."}, errors: parsed.errors}, parsed.status);
+        //execute the database query
+        function(where, sort, limit, skip) {
 
-      });
+          console.log('beginning query...', where, sort, limit, skip);
+
+          self.model.find()
+            .where(where)
+            .limit(limit)
+            .skip(skip)
+            .sort(sort)
+            .then(function(results) {
+
+              //package & return response
+              var response = {meta:{success: true, message: "Successfully searched the " + self.name + " database..."}};
+              response[self.name] = results;
+
+              console.log('resolving search...');
+              resolve(response);
+
+            });
+
+        }).catch(function(error) {
+
+          //if the error is from waterline; clean it up first
+          if( !(error instanceof SuperJS.Error) ) {
+            error = self.parseWlErrors(error);
+          }
+
+          //reject with the error so the application can respond
+          reject(error);
+
+        });
+
+    });
+
   },
 
   /**
@@ -106,29 +124,40 @@ module.exports = Controller.extend({
    * @param next
    */
 
-  Create: function(req, next) {
+  Create: function(req) {
 
-    //maintain reference to self
+    //maintain reference to instance
     var self = this;
+
+    //return promise to resolve or reject
+    return new Promise(function(resolve, reject) {
 
     //validate parameters
     var obj = req.body || {};
 
     //add record to the database
-    this.model.create(obj)
+    self.model.create(obj)
       .then(function(results) {
 
-        //package & return response
+        //package response
         var response = {meta:{success: true, message: "Successfully created " + self.name + " record..."}};
         response[self.name] = results;
-        next(response);
 
-      }).fail( function(wlErrors) {
+        //resolve with results from waterline
+        resolve(response);
 
-        var parsed = self.parseErrors(wlErrors);
-        next({meta:{success: false, message: "Failed to create " + self.name + " record..."}, errors: parsed.errors}, parsed.status);
+      }).catch(function(error) {
+
+        //if the error is from waterline; clean it up first
+        if( !(error instanceof SuperJS.Error) ) {
+          error = self.parseWlErrors(error);
+        }
+
+        //reject with the error
+        reject(error);
 
       });
+    });
   },
 
   /**
@@ -138,33 +167,46 @@ module.exports = Controller.extend({
    * @param next
    */
 
-  Update: function(req, next) {
+  Update: function(req) {
 
-    //maintain reference to self
+    //maintain reference to instance
     var self = this;
 
-    //validate parameters
-    var obj = req.body || {};
+    //return promise to resolve or reject
+    return new Promise(function(resolve, reject) {
 
-    //make sure the id is present
-    if( !obj.id ) {
-      next({success: false, message: "Updates require you pass the \"id\" field..."});
-      return;
-    }
+      //validate parameters
+      var obj = req.body || {};
 
-    //update database rec ord
-    this.model.update({id: obj.id}, obj)
-      .then(function(results) {
+      //make sure the id is present
+      if (!obj.id) {
+        next({success: false, message: "Updates require you pass the \"id\" field..."});
+        return;
+      }
 
-        //package & return response
-        var response = {meta:{success: true, message: "Successfully updated " + self.name + " record..."}};
-        response[self.name] = results;
-        next(response);
+      //update database record
+      self.model.update({id: obj.id}, obj)
+        .then(function (results) {
 
-      }).fail( function(wlErrors) {
-        var parsed = self.parseErrors(wlErrors);
-        next({meta:{success: false, message: "Failed to update " + self.name + " record..."}, errors: parsed.errors}, parsed.status);
-      });
+          //package response
+          var response = {meta: {success: true, message: "Successfully updated " + self.name + " record..."}};
+          response[self.name] = results;
+
+          //resolve with results from waterline
+          resolve(response);
+
+        }).catch(function(error) {
+
+          //if the error is from waterline; clean it up first
+          if( !(error instanceof SuperJS.Error) ) {
+            error = self.parseWlErrors(error);
+          }
+
+          //reject with the error
+          reject(error);
+
+        });
+    });
 
   },
 
@@ -175,105 +217,216 @@ module.exports = Controller.extend({
    * @param next
    */
 
-  Delete: function(req, next) {
-
-    //maintain reference to self
-    var self = this;
-
-    //validate parameters
-    var params = req.body || {};
-
-    //make sure the id is present
-    if( !params.id ) {
-      next({success: false, message: "Delete requires you pass the \"id\" field..."});
-      return;
-    }
-
-    //mark record as deleted
-    this.model.update({id: params.id}, {isDeleted: true})
-      .then(function(results) {
-
-        //package & return response
-        var response = {meta:{success: true, message: "Successfully deleted " + self.name + " record..."}};
-        response[self.name] = results;
-        next(response);
-
-      }).fail( function(wlErrors) {
-        var parsed = self.parseErrors(wlErrors);
-        next({meta:{success: false, message: "Failed to delete " + self.name + " record..."}, errors: parsed.errors}, parsed.status);
-      });
-
-  },
-
-  Describe: function(req, next) {
-
-    var response = {meta:{success: true, model: this.model.name}, attributes: this.model._attributes};
-    next(response);
-
-  },
-
-  //TODO: refactor as promises
-  sanitizeCriteria: function(req, next) {
+  Delete: function(req) {
 
     //maintain reference to instance
     var self = this;
 
-    var where = req.param('where');
-    if( where ) {
+    //return promise to resolve or reject
+    return new Promise(function(resolve, reject) {
 
-      //attempt to convert where clause to object if its a string
-      if(_.isString(where)){
-        try {
-          where = JSON.parse(where);
-        } catch(e) {
-          next({meta:{success: false, message: "Failed to search the " + self.name + " database..."}, errors:[{code: 'invalid_where', status: 422, message: 'The where parameter provided was not valid JSON.'}]}, 422);
-          return false;
+      //validate parameters
+      var params = req.body || {};
+
+      //make sure the id is present
+      if (!params.id) {
+        next({success: false, message: "Delete requires you pass the \"id\" field..."});
+        return;
+      }
+
+      //mark record as deleted
+      self.model.update({id: params.id}, {isDeleted: true})
+        .then(function (results) {
+
+          //package response
+          var response = {meta: {success: true, message: "Successfully deleted " + self.name + " record..."}};
+          response[self.name] = results;
+
+          //resolve with results from waterline
+          resolve(response);
+
+        }).catch(function(error) {
+
+          //if the error is from waterline; clean it up first
+          if( !(error instanceof SuperJS.Error) ) {
+            error = self.parseWlErrors(error);
+          }
+
+          //reject with the error
+          reject(error);
+
+        });
+    });
+
+  },
+
+  Describe: function(req) {
+
+    //maintain reference to instance
+    var self = this;
+
+    //return promise to resolve or reject
+    return new Promise(function(resolve, reject) {
+
+      //package response
+      var response = {meta: {success: true, model: self.model.name}, attributes: self.model._attributes};
+
+      //resolve response
+      resolve(response);
+
+    });
+
+  },
+
+  /**
+   * Sanitize and validate the search criteria.
+   *
+   * @param req
+   * @returns {Promise}
+   */
+
+  sanitizeCriteria: function(req) {
+
+    //maintain reference to instance
+    var self = this;
+
+    //return bluebird promise
+    return new Promise(function(resolve, reject) {
+
+      //attempt to capture the where parameter
+      var where = req.param('where');
+
+      if( where ) {
+
+        //attempt to convert where clause to object if its a string
+        if(_.isString(where)){
+          try {
+            where = JSON.parse(where);
+          } catch(e) {
+            reject(new SuperJS.Error('invalid_where', 422, 'The where parameter provided was not valid JSON.'));
+          }
+        }
+
+      } else {
+
+        //build search criteria from passed parameters
+        where = {};
+
+        var paramBlackList = ['sort','limit','skip','where'];
+
+        //loop through query string parameters
+        for( var qParam in req.query ) {
+
+          //ignore special parameters
+          if( paramBlackList.indexOf(qParam) !== -1 ) {
+            continue;
+          }
+
+          //populate where object
+          where[qParam] = req.query[qParam];
+
+        }
+
+        //loop through body parameters
+        for( var bParam in req.body ) {
+
+          //ignore special parameters
+          if( paramBlackList.indexOf(bParam) !== -1 ) {
+            continue;
+          }
+
+          //populate where object
+          where[bParam] = req.body[bParam];
+
         }
       }
 
+      //make sure fields are valid
+      for( var attribute in where ) {
+        if( !self.isValidAttribute(attribute) ) {
+          reject(new SuperJS.Error('invalid_attribute', 422, attribute+' is not a valid attribute.'));
+        }
+      }
+
+      return resolve(where);
+
+    });
+
+  },
+
+  /**
+   * Sanitize and validate the sort parameter.
+   *
+   * @param req
+   * @returns {Promise}
+   */
+
+  sanitizeSort: function(req) {
+
+    //maintain reference to instance
+    var self = this;
+
+    return new Promise(function(resolve, reject) {
+
+      var sort = req.param('sort');
+      if( sort ) {
+
+        //split the sort parameter to obtain the attribute and direction
+        var sortBy = sort.split(" ");
+
+        //check the attribute
+        if( !self.isValidAttribute(sortBy[0]) ) {
+          return reject(new SuperJS.Error('invalid_sort_attribute', 422, sortBy[0]+' is not a valid attribute.'));
+        }
+
+        //check the direction
+        if( sortBy.length <= 1 || (sortBy[1] !== 'asc' && sortBy[1] !== 'desc') ) {
+          return reject(new SuperJS.Error('invalid_sort_direction', 422, sortBy[1]+' is not a valid sort direction.'));
+        }
+      }
+
+      resolve(sort);
+    });
+  },
+
+  sanitizeLimit: function(req) {
+
+    //maintain reference to instance
+    var self = this;
+
+    return new Promise(function(resolve, reject) {
+
+      //set limit and skip parameters
+      var limit = req.param('limit') || 25;
+
+      resolve(limit);
+
+    });
+
+  },
+
+  sanitizeSkip: function(req) {
+
+    //maintain reference to instance
+    var self = this;
+
+    return new Promise(function(resolve, reject) {
+
+      var skip = req.param('skip') || 0;
+
+      resolve(skip);
+
+    });
+  },
+
+  isValidAttribute: function(attribute) {
+
+    if( Object.keys(this.model._attributes).indexOf(attribute) === -1 ) {
+      return false
     } else {
-
-      where = {};
-
-      var paramBlackList = ['sort','limit','skip','where'];
-
-      //loop through query string parameters
-      for( var qParam in req.query ) {
-
-        //ignore special parameters
-        if( paramBlackList.indexOf(qParam) !== -1 ) {
-          continue;
-        }
-
-        //populate where object
-        where[qParam] = req.query[qParam];
-
-      }
-
-      //loop through body parameters
-      for( var bParam in req.body ) {
-
-        //ignore special parameters
-        if( paramBlackList.indexOf(bParam) !== -1 ) {
-          continue;
-        }
-
-        //populate where object
-        where[bParam] = req.body[bParam];
-
-      }
+      return true;
     }
 
-    //make sure fields are valid
-    for( var attribute in where ) {
-      var attribute = attribute.split(" ");
-      if( Object.keys(this.model._attributes).indexOf(attribute[0]) === -1 ) {
-        next({meta:{success: false, message: "Failed to search the " + self.name + " database..."}, errors:[{code: 'invalid_attribute', status: 422, message: attribute[0]+' is not a valid attribute.'}]}, 422);
-        return false;
-      }
-    }
-
-    return where;
   },
 
   /**
@@ -284,53 +437,53 @@ module.exports = Controller.extend({
    * @returns {Object}
    */
 
-  //TODO: refactor as promises
-  parseErrors: function(wlErrors) {
+  parseWlErrors: function(wlError) {
 
-    this.app.log.error('waterline errors:',wlErrors);
+    this.app.log.error('waterline errors:',wlError);
 
-    var errors = [];
-    var status = 500;
+    var error =  {code: 'database_error', status: 500, message: 'An unexpected error occurred attempting to execute your query.'};
 
-    if( wlErrors.status >= 500 ) {
-      errors.push({code: 'database_error', status: status, message: 'An unexpected error occurred attempting to execute your query.', raw: wlErrors.raw});
+    if( wlError.status ) {
 
-    } else if( wlErrors.status >= 400 ) {
+      if (wlError.status >= 500) {
+        error.detail = wlError.details;
 
-      status = 422;
-      var attributes = wlErrors.invalidAttributes;
+      } else if (wlError.status >= 400) {
 
-      var error = {code: 'validation_error', status: status, exceptions:[]};
+        var attributes = wlError.invalidAttributes;
 
-      for (var key in attributes) {
+        error.code = 'validation_error';
+        error.status = 422;
+        error.exceptions = [];
 
-        for (var i in attributes[key]) {
+        for (var key in attributes) {
 
-          var exception = {rule: attributes[key][i].rule, attribute: key};
+          for (var i in attributes[key]) {
 
-          //TODO: provide clean error message for all rules
-          switch (attributes[key][i].rule) {
-            case 'string':
-              exception.message = "The `" + key + "` field must be a string.";
-              break;
-            case 'required':
-              exception.message = "The `" + key + "` field is required.";
-              break;
-            case 'email':
-              exception.message = "The `" + key + "` field must be a valid email address.";
-              break;
-            default:
-              exception.message = attributes[key][i].message;
+            var exception = {rule: attributes[key][i].rule, attribute: key};
+
+            //TODO: provide clean error message for all rules
+            switch (attributes[key][i].rule) {
+              case 'string':
+                exception.message = "The `" + key + "` field must be a string.";
+                break;
+              case 'required':
+                exception.message = "The `" + key + "` field is required.";
+                break;
+              case 'email':
+                exception.message = "The `" + key + "` field must be a valid email address.";
+                break;
+              default:
+                exception.message = attributes[key][i].message;
+            }
+
+            error.exceptions.push(exception);
           }
-
-          error.exceptions.push(exception);
         }
       }
-
-      errors.push(error);
     }
 
-    return {status: status, errors: errors};
+    return error;
   }
 
 });
