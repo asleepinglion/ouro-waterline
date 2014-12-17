@@ -1,7 +1,30 @@
 /*
- * Waterline Database Engine
+
+
+  sSSs   .S       S.    .S_sSSs      sSSs   .S_sSSs        .S    sSSs
+ d%%SP  .SS       SS.  .SS~YS%%b    d%%SP  .SS~YS%%b      .SS   d%%SP
+d%S'    S%S       S%S  S%S   `S%b  d%S'    S%S   `S%b     S%S  d%S'
+S%|     S%S       S%S  S%S    S%S  S%S     S%S    S%S     S%S  S%|
+S&S     S&S       S&S  S%S    d*S  S&S     S%S    d*S     S&S  S&S
+Y&Ss    S&S       S&S  S&S   .S*S  S&S_Ss  S&S   .S*S     S&S  Y&Ss
+`S&&S   S&S       S&S  S&S_sdSSS   S&S~SP  S&S_sdSSS      S&S  `S&&S
+  `S*S  S&S       S&S  S&S~YSSY    S&S     S&S~YSY%b      S&S    `S*S
+   l*S  S*b       d*S  S*S         S*b     S*S   `S%b     d*S     l*S
+  .S*P  S*S.     .S*S  S*S         S*S.    S*S    S%S    .S*S    .S*P
+sSS*S    SSSbs_sdSSS   S*S          SSSbs  S*S    S&S  sdSSS   sSS*S
+YSS'      YSSP~YSSY    S*S           YSSP  S*S    SSS  YSSY    YSS'
+                       SP                  SP
+                       Y                   Y
+
+Waterline Engine
  */
 
+//expose core classes for ease of access
+module.exports.Class = require('../superjs/index').Class;
+module.exports.Applicaiton = require('../superjs/index').Application;
+module.exports.Error = require('../superjs/index').Error;
+
+//expose waterline classes
 module.exports.Initializer = require('./initializer');
 module.exports.Waterline = require('waterline');
 module.exports.Controller = require('./controller');

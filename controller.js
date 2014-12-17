@@ -91,7 +91,6 @@ module.exports = SuperJS.Controller.extend({
               //package & return response
               var response = {meta:{success: true, message: "Successfully searched the " + self.name + " database..."}};
               response[self.name] = results;
-
               resolve(response);
 
             });
@@ -257,8 +256,7 @@ module.exports = SuperJS.Controller.extend({
 
   Describe: function(req) {
 
-    //maintain reference to instance
-    var self = this;
+
 
     //return promise to resolve or reject
     return new Promise(function(resolve, reject) {
