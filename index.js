@@ -16,15 +16,11 @@ YSS'      YSSP~YSSY    S*S           YSSP  S*S    SSS  YSSY    YSS'
                        SP                  SP
                        Y                   Y
 
-Waterline Engine
+@module Waterline Database Engine
+@author Aaron Storck
+
  */
 
-//expose core classes for ease of access
-module.exports.Class = require('../superjs/index').Class;
-module.exports.Applicaiton = require('../superjs/index').Application;
-module.exports.Error = require('../superjs/index').Error;
-
-//expose waterline classes
 module.exports.Initializer = require('./initializer');
 module.exports.Waterline = require('waterline');
 module.exports.Controller = require('./controller');

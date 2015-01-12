@@ -1,13 +1,18 @@
-/*
- * Waterline Initializer *
+"use strict";
+
+var SuperJS = require('superjs');
+var Waterline = require('waterline');
+var fs = require('fs');
+
+/**
+ * The Waterline initializer configures and initializes the Waterline ORM within SuperJS.
+ *
+ * @exports Initializer
+ * @namespace SuperJS.Waterline
+ * @extends SuperJS.Class
  */
 
-//require dependencies
-var Class = require('superjs-base');
-var fs = require('fs');
-var Waterline = require('waterline');
-
-module.exports = Class.extend({
+module.exports = SuperJS.Class.extend({
 
 
   //initialize the database engine
@@ -22,6 +27,8 @@ module.exports = Class.extend({
     this.setupOrm();
     this.loadModels();
     this.initOrm();
+
+    this.on('dbReady', this.updateControllers);
   },
 
   //initialize the waterline ORM
@@ -55,29 +62,11 @@ module.exports = Class.extend({
         //make sure the controller exists
         if( fs.existsSync(self.app.appPath+'/modules/'+moduleName+'/model.js') ) {
 
-          var modelDefinition = require(self.app.appPath+'/modules/'+moduleName+'/model');
+          var Model = require(self.app.appPath+'/modules/'+moduleName+'/model');
 
-          if( modelDefinition ) {
-            self.loadModel(moduleName, modelDefinition);
+          if( Model ) {
+            self.loadModel(moduleName, Model);
           }
-        }
-
-      });
-
-    } else if( fs.existsSync(self.app.appPath+'/models') ) {
-
-      //get list of models
-      var models = fs.readdirSync(self.app.appPath+'/models');
-
-      //load each controller
-      models.map(function(modelName) {
-
-        modelName = modelName.split('.')[0];
-
-        var modelDefinition = require(self.app.appPath+'/models/'+modelName);
-
-        if( modelDefinition ) {
-          self.loadModel(modelName, modelDefinition);
         }
 
       });
@@ -88,17 +77,60 @@ module.exports = Class.extend({
 
   },
 
-  loadModel: function(modelName, modelDefinition) {
+  loadModel: function(modelName, Model) {
 
-    //set name/identity if not present
-    if (modelDefinition.name) {
-      modelDefinition.identity = modelDefinition.name;
-    } else {
-      if( modelDefinition.identity ) {
-        modelDefinition.name = modelDefinition.identity;
-      } else {
-        modelDefinition.name = modelName;
-        modelDefinition.identity = modelName;
+    //instantiate the model
+    var model = new Model(this.app);
+
+    //set name based on the path if not set in the model
+    if (!model.name) {
+      model.name = modelName;
+    }
+
+    //setup the model definition for waterline
+    var modelDefinition = {};
+
+    //set the connection
+    modelDefinition.connection = model.connection;
+
+    //copy options to model definition for the waterline ORM
+    if( model.options) {
+
+      for (var key in model.options) {
+
+        if (typeof model.options[key] !== 'function') {
+          modelDefinition[key] = model.options[key];
+        }
+
+      }
+    }
+
+    //set the identity for waterline if not set in the options
+    if( !modelDefinition.identity ) {
+      modelDefinition.identity = modelName;
+    }
+
+    //setup the model attributes for waterline
+    modelDefinition.attributes = {};
+
+    //copy the attributes to the model definition for the waterline ORM.
+    if( model.attributes) {
+      for (var key in model.attributes ) {
+
+        //use json to create actual copy
+        modelDefinition.attributes[key] = JSON.parse(JSON.stringify(model.attributes[key]));
+
+        //the validate object is used by superjs-validator
+        if( modelDefinition.attributes[key].validate )
+          delete modelDefinition.attributes[key].validate;
+
+        //the sanitize object is used by superjs-validator
+        if( modelDefinition.attributes[key].sanitize )
+          delete modelDefinition.attributes[key].sanitize;
+
+        //the db type is used by superjs-migrate
+        if( modelDefinition.attributes[key].dbType )
+          delete modelDefinition.attributes[key].dbType;
       }
     }
 
@@ -108,7 +140,10 @@ module.exports = Class.extend({
     //load the collection with waterline
     this.app.orm.loadCollection(ormModel);
 
-    //make the model available to the application
+    //make the model class available to the application
+    this.app.models[modelName] = model;
+
+    //keep simple array of load model names for debugging
     this.loadedModels.push(modelName);
   },
 
@@ -125,12 +160,23 @@ module.exports = Class.extend({
         self.app.log.error('ORM failed to initialize:',err);
 
       } else {
-        self.app.models = models.collections;
-        self.app.connections = models.connections;
 
-        self.app.emit('dbReady', models.collections);
+        self.emit('dbReady', models.collections);
       }
     });
+  },
+
+  //TODO: namespace the models? Could be an issue when multiple db engines are possible.
+  updateControllers: function(collections) {
+
+    //loop through controllers and update the model of the same name
+    for( var controllerName in this.app.controllers ) {
+
+      if( controllerName in collections ) {
+        this.app.controllers[controllerName].model = collections[controllerName];
+      }
+
+    }
 
   }
 

@@ -1,8 +1,17 @@
-/*
- * Waterline Model *
+"use strict";
+
+var SuperJS = require('superjs');
+
+/**
+ * The Waterline model provides a common interface from SuperJS to the
+ * Waterline ORM.
+ *
+ * @exports Model
+ * @namespace SuperJS.Waterline
+ * @extends SuperJS.Model
  */
 
-//Dummy method to keep consistency between SuperJS and Waterline.
-module.exports.extend = function(modelDefinition) {
-  return modelDefinition;
-};
+module.exports = SuperJS.Model.extend({
+
+
+});

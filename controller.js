@@ -1,18 +1,15 @@
-/*
- * @module API
- * @submodule Database
- */
-
 "use strict";
 
-var SuperJS = require('../superjs/index');
+var SuperJS = require('superjs');
 var _ = require('underscore');
 var Promise = require('bluebird');
 
 /**
- * The WaterlineController provides basic essential methods for the basic model management.
+ * The Waterline controller initializes the controller within SuperJS &
+ * provides essential methods for managing Waterline models.
  *
- * @exports WaterlineController
+ * @exports Controller
+ * @namespace SuperJS.Waterline
  * @extends SuperJS.Controller
  */
 
@@ -31,20 +28,11 @@ module.exports = SuperJS.Controller.extend({
     //mark controller as rest enabled
     this.restEnabled = true;
 
+    //maintain a reference to models
+    this.models = app.models;
+
     //store reference to self
     var self = this;
-
-    this.app.on('dbReady', function(models) {
-
-      //store reference to models
-      self.models = models;
-
-      //associate model of the same name to this controller if it exists
-      var modelName = self.name.toLowerCase();
-      if( modelName in models )
-        self.model = models[modelName];
-
-    });
 
   },
 
@@ -66,9 +54,6 @@ module.exports = SuperJS.Controller.extend({
       //execute sanitization & validation in parallel
       return Promise.join(
 
-        //sanitize and validate the search criteria
-        self.sanitizeCriteria(req),
-
         //sanitize and validate the sort parameter
         self.sanitizeSort(req),
 
@@ -79,9 +64,20 @@ module.exports = SuperJS.Controller.extend({
         self.sanitizeSkip(req),
 
         //execute the database query
-        function(where, sort, limit, skip) {
+        function(sort, limit, skip) {
 
-          self.model.find()
+          //capture where
+          var where = req.param('where');
+
+          //make sure fields are valid
+          for( var attribute in where ) {
+
+            if( !self.isValidAttribute(attribute) ) {
+              reject(new SuperJS.Error('invalid_attribute', 422, attribute+' is not a valid attribute.'));
+            }
+          }
+
+          return self.model.find()
             .where(where)
             .limit(limit)
             .skip(skip)
