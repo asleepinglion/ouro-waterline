@@ -7,7 +7,6 @@ module.exports = {
     search: {
 
       security: false,
-
       description: "Search the {{model}} database...",
 
       params: {
@@ -17,14 +16,14 @@ module.exports = {
           description: 'The where parameter allows you to filter records using the Waterline query language.',
 
           transform: {
-            testMethod2: true,
-            testMethod1: true,
-            queryOrBody: true //source the parameter from either the query string, json body, or form attributes
+            json: true
           },
 
           validate: {
             //waterlineQuery: true, //test to make sure the parameter is valid waterline query language.
-            attributes: true //run model validations against the parameter contents.
+            required: true,
+            json: true
+            //model: true //run model validations against the parameter contents.
           }
         },
 
@@ -42,6 +41,12 @@ module.exports = {
 
         skip: {
           description: 'The skip parameter allows you to page results in conjunction with the limit parameter.'
+        },
+
+        test: {
+          validate: {
+            required: true
+          }
         }
 
       }
@@ -56,13 +61,14 @@ module.exports = {
 
         attributes: {
           description: 'The attributes for the record you wish to create.',
-
-          transform: {
-            queryOrBody: true //source the parameter from either the query string, json body, or form attributes
-          },
+          type: 'object',
 
           validate: {
-            attributes: true //run model validations against the parameter contents.
+            model: true
+          },
+
+          sanitize: {
+            model: true
           }
 
         }

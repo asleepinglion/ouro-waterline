@@ -67,8 +67,9 @@ module.exports = SuperJS.Controller.extend({
         function(sort, limit, skip) {
 
           //capture where
-          var where = req.param('where');
+          var where = req.parameters.where;
 
+          /*
           //make sure fields are valid
           for( var attribute in where ) {
 
@@ -76,6 +77,8 @@ module.exports = SuperJS.Controller.extend({
               reject(new SuperJS.Error('invalid_attribute', 422, attribute+' is not a valid attribute.'));
             }
           }
+
+          */
 
           return self.model.find()
             .where(where)
@@ -86,6 +89,7 @@ module.exports = SuperJS.Controller.extend({
 
               //package & return response
               var response = {meta:{success: true, message: "Successfully searched the " + self.name + " database..."}};
+              //console.log(results);
               response[self.name] = results;
               resolve(response);
 
@@ -127,6 +131,7 @@ module.exports = SuperJS.Controller.extend({
 
     //add record to the database
     self.model.create(obj)
+
       .then(function(results) {
 
         //package response
@@ -428,7 +433,7 @@ module.exports = SuperJS.Controller.extend({
 
   parseWlErrors: function(wlError) {
 
-    this.app.log.error('waterline errors:',wlError);
+    //this.app.log.error('waterline errors:',wlError);
 
     var error =  {code: 'database_error', status: 500, message: 'An unexpected error occurred attempting to execute your query.'};
 
