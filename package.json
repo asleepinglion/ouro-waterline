@@ -10,6 +10,7 @@
   "repository": "https://github.com/asleepinglion/superjs-waterline",
   "dependencies": {
     "bluebird": "^2.3.11",
+    "superjs": "*",
     "underscore": "^1.7.0",
     "waterline": "git+https://github.com/balderdashy/waterline.git"
   },
