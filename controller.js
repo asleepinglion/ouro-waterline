@@ -255,23 +255,6 @@ module.exports = SuperJS.Controller.extend({
 
   },
 
-  Describe: function(req) {
-
-
-
-    //return promise to resolve or reject
-    return new Promise(function(resolve, reject) {
-
-      //package response
-      var response = {meta: {success: true, model: self.model.name}, attributes: self.model._attributes};
-
-      //resolve response
-      resolve(response);
-
-    });
-
-  },
-
   /**
    * Sanitize and validate the search criteria.
    *
