@@ -14,7 +14,6 @@ var fs = require('fs');
 
 module.exports = SuperJS.Class.extend({
 
-
   //initialize the database engine
   init: function(app) {
 
@@ -143,6 +142,11 @@ module.exports = SuperJS.Class.extend({
     //make the model class available to the application
     this.app.models[modelName] = model;
 
+    //assign the model to its related controller
+    if( this.app.controllers[modelName] ) {
+      this.app.controllers[modelName].model = model;
+    }
+
     //keep simple array of load model names for debugging
     this.loadedModels.push(modelName);
   },
@@ -173,7 +177,7 @@ module.exports = SuperJS.Class.extend({
     for( var controllerName in this.app.controllers ) {
 
       if( controllerName in collections ) {
-        this.app.controllers[controllerName].model = collections[controllerName];
+        this.app.controllers[controllerName].model.engine = collections[controllerName];
       }
 
     }
