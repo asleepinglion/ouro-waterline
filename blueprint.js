@@ -16,15 +16,15 @@ module.exports = {
           default: {},
 
           transform: {
-            json: true
+            object: true
           },
           validate: {
-            json: true
           }
         },
 
         sort: {
           description: 'The sort parameter allows you to sort records using standard SQL notation (e.g. field ASC).',
+          default: "",
           type: 'string',
           validate: {
             sortAttribute: true, //validate sort attribute
@@ -64,6 +64,7 @@ module.exports = {
         attributes: {
           description: 'The attributes for the record you wish to create.',
           type: 'object',
+          //default: {},
           transform: {
             json: true
           },
