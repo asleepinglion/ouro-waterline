@@ -86,6 +86,9 @@ module.exports = SuperJS.Class.extend({
       model.name = modelName;
     }
 
+    //check the configuration for issues
+    model.processConfiguration();
+
     //setup the model definition for waterline
     var modelDefinition = {};
 
