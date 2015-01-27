@@ -27,7 +27,7 @@ module.exports = SuperJS.Class.extend({
     this.loadModels();
     this.initOrm();
 
-    this.on('dbReady', this.updateControllers);
+    this.on('dbReady', this.updateModels);
   },
 
   //initialize the waterline ORM
@@ -40,7 +40,7 @@ module.exports = SuperJS.Class.extend({
 
   },
 
-  //load models by going through module folders
+  //find models by searching through modules folder
   loadModels: function() {
 
     //maintain reference to self
@@ -76,6 +76,7 @@ module.exports = SuperJS.Class.extend({
 
   },
 
+  //instantiate the model & register with waterline & the application
   loadModel: function(modelName, Model) {
 
     //instantiate the model
@@ -154,6 +155,7 @@ module.exports = SuperJS.Class.extend({
     this.loadedModels.push(modelName);
   },
 
+  //initialize the orm
   initOrm: function() {
 
     //maintain reference to self
@@ -174,15 +176,11 @@ module.exports = SuperJS.Class.extend({
   },
 
   //TODO: namespace the models? Could be an issue when multiple db engines are possible.
-  updateControllers: function(collections) {
+  //update the models with acccess to the underlying engine when the database is ready
+  updateModels: function(collections) {
 
-    //loop through controllers and update the model of the same name
-    for( var controllerName in this.app.controllers ) {
-
-      if( controllerName in collections ) {
-        this.app.controllers[controllerName].model.engine = collections[controllerName];
-      }
-
+    for( var modelName in collections ) {
+        this.app.models[modelName].engine = collections[modelName];
     }
 
   }
