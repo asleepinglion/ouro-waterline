@@ -126,32 +126,33 @@ module.exports = SuperJS.Controller.extend({
     //return promise to resolve or reject
     return new Promise(function(resolve, reject) {
 
-    //validate parameters
-    var obj = req.body || {};
+      //validate parameters
+      var obj = (req.body && req.body.attributes) ? req.body.attributes : {};
 
-    //add record to the database
-    self.model.create(obj)
+      //add record to the database
+      self.model.create(obj)
 
-      .then(function(results) {
+        .then(function(results) {
 
-        //package response
-        var response = {meta:{success: true, message: "Successfully created " + self.name + " record..."}};
-        response[self.name] = results;
+          //package response
+          var response = {meta:{success: true, message: "Successfully created " + self.name + " record..."}};
+          response[self.name] = results;
 
-        //resolve with results from waterline
-        resolve(response);
+          //resolve with results from waterline
+          resolve(response);
 
-      }).catch(function(error) {
+        }).catch(function(error) {
 
-        //if the error is from waterline; clean it up first
-        if( !(error instanceof SuperJS.Error) ) {
-          error = self.parseWlErrors(error);
-        }
+          //if the error is from waterline; clean it up first
+          if( !(error instanceof SuperJS.Error) ) {
+            error = self.parseWlErrors(error);
+          }
 
-        //reject with the error
-        reject(error);
+          //reject with the error
+          reject(error);
 
-      });
+        });
+
     });
   },
 
@@ -416,7 +417,7 @@ module.exports = SuperJS.Controller.extend({
 
   parseWlErrors: function(wlError) {
 
-    //this.app.log.error('waterline errors:',wlError);
+    this.app.log.error('waterline errors:',wlError);
 
     var error =  {code: 'database_error', status: 500, message: 'An unexpected error occurred attempting to execute your query.'};
 

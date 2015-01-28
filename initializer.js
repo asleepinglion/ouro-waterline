@@ -99,10 +99,10 @@ module.exports = SuperJS.Class.extend({
     //copy options to model definition for the waterline ORM
     if( model.options) {
 
-      for (var key in model.options) {
+      for (var option in model.options) {
 
-        if (typeof model.options[key] !== 'function') {
-          modelDefinition[key] = model.options[key];
+        if (typeof model.options[option] !== 'function') {
+          modelDefinition[option] = model.options[option];
         }
 
       }
@@ -118,22 +118,26 @@ module.exports = SuperJS.Class.extend({
 
     //copy the attributes to the model definition for the waterline ORM.
     if( model.attributes) {
-      for (var key in model.attributes ) {
+      for (var attribute in model.attributes ) {
 
         //use json to create actual copy
-        modelDefinition.attributes[key] = JSON.parse(JSON.stringify(model.attributes[key]));
+        modelDefinition.attributes[attribute] = JSON.parse(JSON.stringify(model.attributes[attribute]));
 
-        //the validate object is used by superjs-validator
-        if( modelDefinition.attributes[key].validate )
-          delete modelDefinition.attributes[key].validate;
+        //the description object is not used by waterline
+        if( modelDefinition.attributes[attribute].description )
+          delete modelDefinition.attributes[attribute].description;
 
-        //the sanitize object is used by superjs-validator
-        if( modelDefinition.attributes[key].sanitize )
-          delete modelDefinition.attributes[key].sanitize;
+        //the validate object is used by superjs-validate
+        if( modelDefinition.attributes[attribute].validate )
+          delete modelDefinition.attributes[attribute].validate;
+
+        //the sanitize object is used by superjs-sanitize
+        if( modelDefinition.attributes[attribute].sanitize )
+          delete modelDefinition.attributes[attribute].sanitize;
 
         //the db type is used by superjs-migrate
-        if( modelDefinition.attributes[key].dbType )
-          delete modelDefinition.attributes[key].dbType;
+        if( modelDefinition.attributes[attribute].dbType )
+          delete modelDefinition.attributes[attribute].dbType;
       }
     }
 
