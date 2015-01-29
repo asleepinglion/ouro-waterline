@@ -172,7 +172,7 @@ module.exports = SuperJS.Controller.extend({
     return new Promise(function(resolve, reject) {
 
       //validate parameters
-      var obj = req.body || {};
+      var obj = (req.body && req.body.attributes) ? req.body.attributes : {};
 
       //make sure the id is present
       if (!obj.id) {
