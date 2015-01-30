@@ -84,7 +84,7 @@ module.exports = SuperJS.Class.extend({
 
     //set name based on the path if not set in the model
     if (!model.name) {
-      model.name = modelName;
+      model.name = modelName.replace('-','_');
     }
 
     //check the configuration for issues
