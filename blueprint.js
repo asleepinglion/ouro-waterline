@@ -66,7 +66,7 @@ module.exports = {
           type: 'object',
           //default: {},
           transform: {
-            json: true
+            object: true
           },
           model: true
         }
@@ -84,7 +84,7 @@ module.exports = {
           description: 'The attributes for the record you wish to update.',
           type: 'object',
           transform: {
-            json: true
+            object: true
           },
           model: true
         }

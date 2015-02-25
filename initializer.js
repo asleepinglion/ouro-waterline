@@ -77,14 +77,17 @@ module.exports = SuperJS.Class.extend({
   },
 
   //instantiate the model & register with waterline & the application
-  loadModel: function(modelName, Model) {
+  loadModel: function(moduleName, Model) {
 
     //instantiate the model
     var model = new Model(this.app);
 
+    //convert module name to table name format
+    var modelName = moduleName.replace('-','_');
+
     //set name based on the path if not set in the model
     if (!model.name) {
-      model.name = modelName.replace('-','_');
+      model.name = modelName;
     }
 
     //check the configuration for issues
@@ -151,8 +154,8 @@ module.exports = SuperJS.Class.extend({
     this.app.models[modelName] = model;
 
     //assign the model to its related controller
-    if( this.app.controllers[modelName] ) {
-      this.app.controllers[modelName].model = model;
+    if( this.app.controllers[moduleName] ) {
+      this.app.controllers[moduleName].model = model;
     }
 
     //keep simple array of load model names for debugging

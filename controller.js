@@ -87,6 +87,8 @@ module.exports = SuperJS.Controller.extend({
             .sort(sort)
             .then(function(results) {
 
+              //console.log(results);
+
               //package & return response
               var response = {meta:{success: true, message: "Successfully searched the " + self.name + " database..."}};
               //console.log(results);
@@ -417,7 +419,8 @@ module.exports = SuperJS.Controller.extend({
 
   parseWlErrors: function(wlError) {
 
-    this.app.log.error('waterline errors:',wlError);
+    this.app.log.error('waterline errors:');
+    this.app.log.object(wlError);
 
     var error =  {code: 'database_error', status: 500, message: 'An unexpected error occurred attempting to execute your query.'};
 
