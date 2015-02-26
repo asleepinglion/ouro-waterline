@@ -127,6 +127,10 @@ module.exports = SuperJS.Class.extend({
         modelDefinition.attributes[attribute] = JSON.parse(JSON.stringify(model.attributes[attribute]));
 
         //the description object is not used by waterline
+        if( modelDefinition.attributes[attribute].type )
+          delete modelDefinition.attributes[attribute].type;
+
+        //the description object is not used by waterline
         if( modelDefinition.attributes[attribute].description )
           delete modelDefinition.attributes[attribute].description;
 
@@ -141,6 +145,10 @@ module.exports = SuperJS.Class.extend({
         //the db type is used by superjs-migrate
         if( modelDefinition.attributes[attribute].dbType )
           delete modelDefinition.attributes[attribute].dbType;
+
+        //the serialize object is used by superjs-serialize
+        if( modelDefinition.attributes[attribute].serialize )
+          delete modelDefinition.attributes[attribute].serialize;
       }
     }
 

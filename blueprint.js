@@ -24,8 +24,8 @@ module.exports = {
 
         sort: {
           description: 'The sort parameter allows you to sort records using standard SQL notation (e.g. field ASC).',
-          default: "",
           type: 'string',
+          default: "",
           validate: {
             sortAttribute: true, //validate sort attribute
             sortDirection: true //validate the sort direction
@@ -64,11 +64,16 @@ module.exports = {
         attributes: {
           description: 'The attributes for the record you wish to create.',
           type: 'object',
-          //default: {},
+
           transform: {
             object: true
           },
-          model: true
+          validate: {
+            required: true
+          },
+          model: {
+            defaults: true
+          }
         }
 
       }
@@ -86,7 +91,9 @@ module.exports = {
           transform: {
             object: true
           },
-          model: true
+          validate: {
+            required: true
+          }
         }
 
       }
