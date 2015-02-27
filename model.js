@@ -37,15 +37,54 @@ module.exports = SuperJS.Model.extend({
 
     });
 
-    return this.engine.find(criteria);
   },
 
   findOne: function(criteria) {
-    return this.engine.findOne(criteria);
+
+    //maintain reference to instance
+    var self = this;
+
+    return new Promise(function(resolve, reject) {
+
+      return self.engine.findOne(criteria)
+
+        .then(function(results) {
+
+          //process results before returning them to the controller
+          self.processResults(results);
+
+          //resolve results
+          resolve(results);
+        })
+        .catch(function(err) {
+          reject(err);
+        });
+
+    });
   },
 
   create: function(criteria) {
-    return this.engine.create(criteria);
+
+    //maintain reference to instance
+    var self = this;
+
+    return new Promise(function(resolve, reject) {
+
+      return self.engine.create(criteria)
+
+        .then(function(results) {
+
+          //process results before returning them to the controller
+          self.processResults(results);
+
+          //resolve results
+          resolve(results);
+        })
+        .catch(function(err) {
+          reject(err);
+        });
+
+    });
   },
 
   update: function(searchCriteria, values) {
