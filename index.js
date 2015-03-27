@@ -16,12 +16,9 @@ YSS'      YSSP~YSSY    S*S           YSSP  S*S    SSS  YSSY    YSS'
                        SP                  SP
                        Y                   Y
 
-@module Waterline Database Engine
-@author Aaron Storck
-
+           -= Waterline Database Engine Module Loader =-
  */
 
-module.exports.Initializer = require('./initializer');
-module.exports.Waterline = require('waterline');
-module.exports.Controller = require('./controller');
-module.exports.Model = require('./model');
+module.exports.Waterline = require('./modules/waterline/class');
+module.exports.Controller = require('./modules/controller/class');
+module.exports.Model = require('./modules/model/class');

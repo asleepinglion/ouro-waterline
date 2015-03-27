@@ -1,19 +1,18 @@
 "use strict";
 
 var SuperJS = require('superjs');
+SuperJS.Api = require('superjs-api');
+
 var _ = require('underscore');
 var Promise = require('bluebird');
 
-/**
- * The Waterline controller initializes the controller within SuperJS &
- * provides essential methods for managing Waterline models.
- *
- * @exports Controller
- * @namespace SuperJS.Waterline
- * @extends SuperJS.Controller
- */
+module.exports = SuperJS.Api.Controller.extend({
 
-module.exports = SuperJS.Controller.extend({
+
+  _metaFile: function() {
+    this._super();
+    this._loadMeta(__filename);
+  },
 
   /**
    * Initialize the controller
@@ -25,17 +24,16 @@ module.exports = SuperJS.Controller.extend({
     //call base class constructor
     this._super(app);
 
-    //maintain reference to app
-    this.app = app;
-
     //mark controller as rest enabled
     this.restEnabled = true;
 
     //maintain a reference to models
     this.models = app.models;
 
-    //store reference to self
-    var self = this;
+    //set the model for this controller
+    if( this.models[this.name] ) {
+      this.model = this.models[this.name];
+    }
 
   },
 
@@ -46,7 +44,7 @@ module.exports = SuperJS.Controller.extend({
    * @param next
    */
 
-  Search: function(req) {
+  search: function(req) {
 
     //maintain reference to instance
     var self = this;
@@ -91,7 +89,7 @@ module.exports = SuperJS.Controller.extend({
    * @param next
    */
 
-  Create: function(req) {
+  create: function(req) {
 
     //maintain reference to instance
     var self = this;
@@ -132,7 +130,7 @@ module.exports = SuperJS.Controller.extend({
    * @param next
    */
 
-  Update: function(req) {
+  update: function(req) {
 
     //maintain reference to instance
     var self = this;
@@ -172,7 +170,7 @@ module.exports = SuperJS.Controller.extend({
    * @param next
    */
 
-  Delete: function(req) {
+  delete: function(req) {
 
     //maintain reference to instance
     var self = this;

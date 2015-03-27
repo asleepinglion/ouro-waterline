@@ -1,18 +1,24 @@
 "use strict";
 
-var SuperJS = require('superjs');
+var SuperJSApi = require('superjs-api');
 var Promise = require('bluebird');
 
-/**
- * The Waterline model provides a common interface from SuperJS to the
- * Waterline ORM.
- *
- * @exports Model
- * @namespace SuperJS.Waterline
- * @extends SuperJS.Model
- */
+module.exports = SuperJSApi.Model.extend({
 
-module.exports = SuperJS.Model.extend({
+  adapter: 'waterline',
+
+  init: function(adapter) {
+
+    this._super(adapter.app);
+
+    //store reference to self
+    var self = this;
+
+    //provide access to the waterline collection model
+    adapter.on('connected', function(collections) {
+      self.db = collections[self.name];
+    });
+  },
 
   find: function(criteria) {
 
@@ -21,7 +27,7 @@ module.exports = SuperJS.Model.extend({
 
     return new Promise(function(resolve, reject) {
 
-      return self.engine.find(criteria)
+      return self.db.find(criteria)
 
         .then(function(results) {
 
@@ -46,7 +52,7 @@ module.exports = SuperJS.Model.extend({
 
     return new Promise(function(resolve, reject) {
 
-      return self.engine.findOne(criteria)
+      return self.db.findOne(criteria)
 
         .then(function(results) {
 
@@ -70,7 +76,7 @@ module.exports = SuperJS.Model.extend({
 
     return new Promise(function(resolve, reject) {
 
-      return self.engine.create(criteria)
+      return self.db.create(criteria)
 
         .then(function(results) {
 
@@ -95,7 +101,7 @@ module.exports = SuperJS.Model.extend({
     return new Promise(function(resolve, reject) {
 
       //execute waterline update with provided criteria and values
-      self.engine.update(searchCriteria, values)
+      self.db.update(searchCriteria, values)
         .then(function(results) {
 
           //process results before returning them to the controller
@@ -112,7 +118,7 @@ module.exports = SuperJS.Model.extend({
   },
 
   destroy: function(criteria) {
-    return this.engine.destroy(criteria);
+    return this.db.destroy(criteria);
   },
 
   //process results returned from waterline before returning to the controller
