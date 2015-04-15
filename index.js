@@ -19,6 +19,6 @@ YSS'      YSSP~YSSY    S*S           YSSP  S*S    SSS  YSSY    YSS'
            -= Waterline Database Engine Module Loader =-
  */
 
-module.exports.Waterline = require('./modules/waterline/class');
-module.exports.Controller = require('./modules/controller/class');
-module.exports.Model = require('./modules/model/class');
+module.exports.Waterline = require('./lib/waterline/class');
+module.exports.Controller = require('./lib/controller/class');
+module.exports.Model = require('./lib/model/class');
