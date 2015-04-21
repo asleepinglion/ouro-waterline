@@ -13,7 +13,7 @@
     "superjs": "*",
     "underscore": "*",
     "superjs-api": "*",
-    "waterline": "git+https://github.com/balderdashy/waterline.git"
+    "waterline": "*"
   },
   "license": "MIT"
 }
