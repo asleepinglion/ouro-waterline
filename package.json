@@ -1,18 +1,18 @@
 {
-  "name": "superjs-waterline",
+  "name": "ouro-waterline",
   "author": {
     "name": "Aaron Storck",
     "email": "aaronstorck@gmail.com"
   },
-  "version": "0.8.7",
+  "version": "0.9.0",
   "description": "Brings the power of Sail.JS' Waterline ORM to Super.JS!",
   "main": "index.js",
-  "repository": "https://github.com/asleepinglion/superjs-waterline",
+  "repository": "https://github.com/asleepinglion/ouro-waterline",
   "dependencies": {
     "bluebird": "*",
-    "superjs": "*",
+    "ouro": "*",
     "underscore": "*",
-    "superjs-api": "*",
+    "ouro-api": "*",
     "waterline": "*"
   },
   "license": "MIT"
